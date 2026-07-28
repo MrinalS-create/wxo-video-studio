@@ -1,0 +1,33 @@
+# ── Kokoro model files (too large for git — downloaded by setup) ──
+kokoro-v1.0.onnx
+kokoro-v1.0.fp16.onnx
+kokoro-v1.0.int8.onnx
+voices-v1.0.bin
+
+# ── Rendered output (videos are generated, not committed) ──
+output/*.mp4
+output/*.webm
+
+# ── Generated compositions (built by Bob, not committed) ──
+compositions/
+
+# ── macOS ──
+.DS_Store
+**/.DS_Store
+
+# ── Node ──
+node_modules/
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# ── Installer build artifacts ──
+install/pkg-build/
+
+# ── Keep empty folders tracked ──
+!assets/.gitkeep
+!scripts/.gitkeep
+!output/.gitkeep

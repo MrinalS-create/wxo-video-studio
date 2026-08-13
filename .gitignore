@@ -7,6 +7,7 @@ voices-v1.0.bin
 # ── Rendered output (videos are generated, not committed) ──
 output/*.mp4
 output/*.webm
+output/snapshots*/
 
 # ── Generated compositions (built by Bob, not committed) ──
 compositions/

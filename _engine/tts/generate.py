@@ -108,6 +108,91 @@ def generate_voice(text: str, output_dir: str, voice: str = "af_heart"):
     return wav_path, transcript_path, round(total_duration, 3)
 
 
+def generate_voice_segments(segments: list, output_dir: str):
+    """
+    Generate narration from multiple voice segments, stitch into one WAV,
+    and produce a merged transcript.json with correct cumulative timestamps.
+
+    segments: list of {"voice": str, "text": str}
+    Returns: (wav_path, transcript_path, total_duration, segment_boundaries)
+             segment_boundaries = list of (voice, label, start_time, end_time)
+    """
+    try:
+        from kokoro_onnx import Kokoro
+        import soundfile as sf
+        import numpy as np
+    except ImportError:
+        print("❌  Kokoro not installed.")
+        print("    Run: pip install -r _engine/tts/requirements.txt")
+        sys.exit(1)
+
+    if not os.path.exists(MODEL_PATH):
+        print(f"❌  Model file not found: {MODEL_PATH}")
+        sys.exit(1)
+    if not os.path.exists(VOICES_PATH):
+        print(f"❌  Voices file not found: {VOICES_PATH}")
+        sys.exit(1)
+
+    os.makedirs(output_dir, exist_ok=True)
+    kokoro = Kokoro(MODEL_PATH, VOICES_PATH)
+
+    all_samples    = []
+    all_words      = []
+    sample_rate    = None
+    offset         = 0.0          # cumulative time offset
+    boundaries     = []           # (voice, label, start_t, end_t)
+
+    for seg in segments:
+        voice = seg["voice"]
+        text  = seg["text"].strip()
+        label = VOICES.get(voice, voice)
+        print(f"🎙️  Segment [{voice} — {label}]: \"{text[:60]}{'...' if len(text)>60 else ''}\"")
+
+        samples, sr = kokoro.create(text, voice=voice, speed=1.0, lang="en-us")
+        if sample_rate is None:
+            sample_rate = sr
+        seg_duration = len(samples) / sr
+
+        # Build word timestamps for this segment (char-proportional)
+        words      = text.split()
+        total_chars = sum(len(w) for w in words)
+        t = 0.0
+        for word in words:
+            word_dur = (len(word) / total_chars) * seg_duration if total_chars else 0
+            all_words.append({
+                "word":  word,
+                "start": round(offset + t, 3),
+                "end":   round(offset + min(t + word_dur, seg_duration), 3),
+            })
+            t = min(t + word_dur, seg_duration)
+
+        boundaries.append((voice, label, round(offset, 3), round(offset + seg_duration, 3)))
+        all_samples.append(samples)
+        offset += seg_duration
+
+    # Stitch all audio segments
+    combined   = np.concatenate(all_samples)
+    total_dur  = round(len(combined) / sample_rate, 3)
+
+    wav_path        = os.path.join(output_dir, "narration.wav")
+    transcript_path = os.path.join(output_dir, "transcript.json")
+
+    import soundfile as sf
+    sf.write(wav_path, combined, sample_rate)
+    print(f"✅  narration.wav  → {wav_path}")
+
+    with open(transcript_path, "w") as f:
+        json.dump({"duration": total_dur, "words": all_words}, f, indent=2)
+    print(f"✅  transcript.json → {transcript_path}")
+    print(f"📊  Total duration: {round(total_dur, 1)}s  |  {len(all_words)} words")
+
+    print("\n🎚️  Voice segment boundaries:")
+    for voice, label, start, end in boundaries:
+        print(f"    {voice:12s} ({label:30s})  {start:.3f}s → {end:.3f}s")
+
+    return wav_path, transcript_path, total_dur, boundaries
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Generate voice narration from a script.",

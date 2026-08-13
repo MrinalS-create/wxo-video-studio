@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>wxo-video-studio</title>
+
+  <!-- Brand tokens -->
+  <link rel="stylesheet" href="./brand.css" />
+
+  <!-- GSAP for animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    /* ── Reset ── */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1920px;
+      height: 1080px;
+      background: var(--brand-bg);
+      font-family: var(--brand-font);
+      overflow: hidden;
+      color: var(--brand-text);
+    }
+
+    /* ── Background glow ── */
+    .bg-glow {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 70%, var(--brand-glow) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 25%, rgba(0,98,255,0.06) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    /* ══════════════════════════════════
+       SHARED LAYOUT UTILITIES
+    ══════════════════════════════════ */
+    .scene {
+      position: absolute; inset: 0;
+      display: flex;
+      opacity: 0;
+    }
+
+    /* ── Stat pill (used in scenes 2 & 3) ── */
+    .stat-pill {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--brand-bg-surface);
+      border: 1px solid var(--brand-bg-border);
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 20px;
+      color: var(--brand-text-muted);
+      opacity: 0;
+    }
+    .stat-pill .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--brand-primary);
+      flex-shrink: 0;
+    }
+
+    /* ── License badge ── */
+    .license-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0, 98, 255, 0.12);
+      border: 1px solid rgba(0, 98, 255, 0.35);
+      border-radius: 6px;
+      padding: 8px 18px;
+      font-size: 18px; font-weight: 600;
+      color: var(--brand-primary);
+      letter-spacing: 0.5px;
+      opacity: 0;
+    }
+
+    /* ══════════════════════════════════
+       SCENE 1 — Title card
+    ══════════════════════════════════ */
+    #scene-title {
+      flex-direction: column;
+      align-items: center; justify-content: center; gap: 28px;
+    }
+
+    .eyebrow {
+      font-size: 20px; font-weight: 600;
+      letter-spacing: 5px; text-transform: uppercase;
+      color: var(--brand-primary); opacity: 0;
+    }
+
+    .main-title {
+      font-size: 108px;
+      font-weight: 700;
+      text-align: center; line-height: 1.05;
+      opacity: 0;
+    }
+    .main-title span { color: var(--brand-primary); }
+
+    .main-subtitle {
+      font-size: 34px;
+      color: var(--brand-text-muted);
+      text-align: center;
+      opacity: 0;
+    }
+
+    /* ══════════════════════════════════
+       SCENE 2 — Kokoro
+    ══════════════════════════════════ */
+    #scene-kokoro {
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 140px; gap: 80px;
+    }
+
+    /* ══════════════════════════════════
+       SCENE 3 — HyperFrames
+    ══════════════════════════════════ */
+    #scene-hyperframes {
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 140px; gap: 80px;
+    }
+
+    /* ── Shared: split-layout left copy ── */
+    .tool-copy {
+      flex: 0 0 640px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    .tool-tag {
+      font-size: 16px; font-weight: 600;
+      letter-spacing: 4px; text-transform: uppercase;
+      color: var(--brand-primary); opacity: 0;
+    }
+
+    .tool-name {
+      font-size: 72px; font-weight: 700;
+      line-height: 1.05; opacity: 0;
+    }
+    .tool-name span { color: var(--brand-primary); }
+
+    .tool-desc {
+      font-size: 26px;
+      color: var(--brand-text-muted);
+      line-height: 1.6; opacity: 0;
+    }
+
+    .tool-pills {
+      display: flex; flex-direction: column; gap: 12px;
+      margin-top: 8px;
+    }
+
+    /* ── Shared: right-side screenshot ── */
+    .tool-visual {
+      flex: 1; height: 680px;
+      border-radius: 16px;
+      border: 1px solid var(--brand-bg-border);
+      background: var(--brand-bg-surface);
+      overflow: hidden;
+      box-shadow: 0 48px 120px rgba(0,0,0,0.55);
+      opacity: 0;
+    }
+
+    .tool-visual img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: top left;
+    }
+
+    /* ══════════════════════════════════
+       SCENE 4 — The build (Bob)
+    ══════════════════════════════════ */
+    #scene-build {
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 140px; gap: 80px;
+    }
+
+    .build-copy {
+      flex: 0 0 700px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    .build-tag {
+      font-size: 16px; font-weight: 600;
+      letter-spacing: 4px; text-transform: uppercase;
+      color: var(--brand-primary); opacity: 0;
+    }
+
+    .build-title {
+      font-size: 64px; font-weight: 700;
+      line-height: 1.1; opacity: 0;
+    }
+    .build-title span { color: var(--brand-primary); }
+
+    .build-desc {
+      font-size: 25px;
+      color: var(--brand-text-muted);
+      line-height: 1.65; opacity: 0;
+    }
+
+    .build-stack {
+      display: flex; flex-direction: column; gap: 12px;
+      margin-top: 8px;
+    }
+
+    /* ── Bob mascot panel ── */
+    .bob-visual {
+      flex: 0 0 560px; height: 680px;
+      border-radius: 20px;
+      background: var(--brand-bg-surface);
+      border: 1px solid var(--brand-bg-border);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 48px 120px rgba(0,0,0,0.55);
+      opacity: 0;
+    }
+
+    .bob-visual img {
+      height: 80%;
+      width: auto;
+      object-fit: contain;
+    }
+
+    /* ══════════════════════════════════
+       SCENE 5 — CTA
+    ══════════════════════════════════ */
+    #scene-cta {
+      flex-direction: column;
+      align-items: center; justify-content: center; gap: 32px;
+    }
+
+    .cta-label {
+      font-size: 20px; letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--brand-text-subtle);
+      opacity: 0;
+    }
+
+    .cta-line1 {
+      font-size: 96px; font-weight: 700;
+      text-align: center; opacity: 0;
+    }
+
+    .cta-line2 {
+      font-size: 96px; font-weight: 700;
+      text-align: center;
+      color: var(--brand-primary); opacity: 0;
+    }
+
+    .cta-sub {
+      font-size: 26px;
+      color: var(--brand-text-muted);
+      letter-spacing: 1px;
+      opacity: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="stage"
+       data-composition-id="wxo-video-studio"
+       data-start="0"
+       data-width="1920"
+       data-height="1080">
+
+    <div class="bg-glow"></div>
+
+    <!-- ══════════════════════════════════
+         SCENE 1 — Title card
+         data-start: 0
+         data-duration: {{SCENE1_DURATION}}
+    ══════════════════════════════════ -->
+    <div id="scene-title" class="scene clip"
+         data-start="0"
+         data-duration="{{SCENE1_DURATION}}"
+         data-track-index="0">
+      <div class="eyebrow">IBM watsonx Orchestrate</div>
+      <h1 class="main-title"><span>wxo</span>-video-studio</h1>
+      <p class="main-subtitle">Write a script. Bob handles the rest.</p>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SCENE 2 — Kokoro TTS
+         data-start: {{SCENE2_START}}
+         data-duration: {{SCENE2_DURATION}}
+    ══════════════════════════════════ -->
+    <div id="scene-kokoro" class="scene clip"
+         data-start="{{SCENE2_START}}"
+         data-duration="{{SCENE2_DURATION}}"
+         data-track-index="1">
+
+      <div class="tool-copy">
+        <div class="tool-tag">Open Source · Apache 2.0</div>
+        <h2 class="tool-name"><span>Kokoro</span> TTS</h2>
+        <p class="tool-desc">An open-weight text-to-speech model. Fully offline, no API key, no cloud cost. 82M parameters. Free to use, modify, and distribute.</p>
+        <div class="tool-pills">
+          <div class="stat-pill"><div class="dot"></div>8.4k GitHub stars</div>
+          <div class="stat-pill"><div class="dot"></div>24 contributors</div>
+          <div class="license-badge">Apache 2.0 — free for any use</div>
+        </div>
+      </div>
+
+      <div class="tool-visual">
+        <img src="../../assets/kokoro-github.png" alt="Kokoro GitHub repository" />
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SCENE 3 — HyperFrames
+         data-start: {{SCENE3_START}}
+         data-duration: {{SCENE3_DURATION}}
+    ══════════════════════════════════ -->
+    <div id="scene-hyperframes" class="scene clip"
+         data-start="{{SCENE3_START}}"
+         data-duration="{{SCENE3_DURATION}}"
+         data-track-index="2">
+
+      <div class="tool-copy">
+        <div class="tool-tag">Open Source · Apache 2.0</div>
+        <h2 class="tool-name"><span>Hyper</span>Frames</h2>
+        <p class="tool-desc">Write HTML. Render video. A headless renderer that turns browser animations into production-quality MP4s — built for agents.</p>
+        <div class="tool-pills">
+          <div class="stat-pill"><div class="dot"></div>40.7k GitHub stars</div>
+          <div class="stat-pill"><div class="dot"></div>345 releases · v0.7.107</div>
+          <div class="license-badge">Apache 2.0 — free for any use</div>
+        </div>
+      </div>
+
+      <div class="tool-visual">
+        <img src="../../assets/hyperframes-github.png" alt="HyperFrames GitHub repository" />
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SCENE 4 — The build (Bob)
+         data-start: {{SCENE4_START}}
+         data-duration: {{SCENE4_DURATION}}
+    ══════════════════════════════════ -->
+    <div id="scene-build" class="scene clip"
+         data-start="{{SCENE4_START}}"
+         data-duration="{{SCENE4_DURATION}}"
+         data-track-index="3">
+
+      <div class="build-copy">
+        <div class="build-tag">Built with IBM Bob</div>
+        <h2 class="build-title">The <span>glue</span><br>layer</h2>
+        <p class="build-desc">I used IBM Bob to wrap both tools into a single, designer-friendly pipeline. Describe your feature — Bob generates the voice, builds the scenes, syncs the audio, and renders the video.</p>
+        <div class="build-stack">
+          <div class="stat-pill"><div class="dot"></div>Kokoro TTS wrapper</div>
+          <div class="stat-pill"><div class="dot"></div>Animated scene templates with brand tokens</div>
+          <div class="stat-pill"><div class="dot"></div>One-command setup script</div>
+          <div class="stat-pill"><div class="dot"></div>Bob skill that orchestrates the pipeline</div>
+        </div>
+      </div>
+
+      <div class="bob-visual">
+        <img src="../../assets/bob.png" alt="IBM Bob — the AI coding assistant" />
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SCENE 5 — CTA
+         data-start: {{SCENE5_START}}
+         data-duration: {{SCENE5_DURATION}}
+    ══════════════════════════════════ -->
+    <div id="scene-cta" class="scene clip"
+         data-start="{{SCENE5_START}}"
+         data-duration="{{SCENE5_DURATION}}"
+         data-track-index="4">
+      <div class="cta-label">wxo-video-studio</div>
+      <h2 class="cta-line1">Write the script.</h2>
+      <h2 class="cta-line2">Bob handles the rest.</h2>
+      <p class="cta-sub">IBM watsonx Orchestrate</p>
+    </div>
+
+    <!-- ── Narration audio ── -->
+    <audio id="narration" class="clip"
+           data-start="0"
+           data-duration="{{TOTAL_DURATION}}"
+           data-track-index="5"
+           data-volume="1.0"
+           src="narration.wav">
+    </audio>
+
+  </div>
+
+  <script>
+    /*
+     * GSAP Timeline — timestamps filled in after TTS generates transcript.json
+     * All scene starts/durations below are placeholders — Bob replaces them.
+     */
+    const tl = gsap.timeline({ paused: true });
+
+    // ── Scene 1: Title entrance ──
+    tl.to(".eyebrow",       { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 0.3)
+      .to(".main-title",    { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" }, 0.7)
+      .to(".main-subtitle", { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 1.2)
+      .to("#scene-title",   { opacity: 0, duration: 0.4 }, {{SCENE1_EXIT}})
+
+    // ── Scene 2: Kokoro entrance ──
+      .to("#scene-kokoro",       { opacity: 1, duration: 0.4 }, {{SCENE2_START}})
+      .to("#scene-kokoro .tool-tag",  { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, {{SCENE2_START_PLUS_0_2}})
+      .to("#scene-kokoro .tool-name", { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, {{SCENE2_START_PLUS_0_4}})
+      .to("#scene-kokoro .tool-desc", { opacity: 1, duration: 0.5 }, {{SCENE2_START_PLUS_0_7}})
+      .to("#scene-kokoro .stat-pill", { opacity: 1, stagger: 0.15, duration: 0.4 }, {{SCENE2_START_PLUS_1_0}})
+      .to("#scene-kokoro .license-badge", { opacity: 1, duration: 0.4 }, {{SCENE2_START_PLUS_1_5}})
+      .to("#scene-kokoro .tool-visual", { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.2)" }, {{SCENE2_START_PLUS_0_3}})
+      .to("#scene-kokoro",  { opacity: 0, duration: 0.4 }, {{SCENE2_EXIT}})
+
+    // ── Scene 3: HyperFrames entrance ──
+      .to("#scene-hyperframes",       { opacity: 1, duration: 0.4 }, {{SCENE3_START}})
+      .to("#scene-hyperframes .tool-tag",  { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, {{SCENE3_START_PLUS_0_2}})
+      .to("#scene-hyperframes .tool-name", { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, {{SCENE3_START_PLUS_0_4}})
+      .to("#scene-hyperframes .tool-desc", { opacity: 1, duration: 0.5 }, {{SCENE3_START_PLUS_0_7}})
+      .to("#scene-hyperframes .stat-pill", { opacity: 1, stagger: 0.15, duration: 0.4 }, {{SCENE3_START_PLUS_1_0}})
+      .to("#scene-hyperframes .license-badge", { opacity: 1, duration: 0.4 }, {{SCENE3_START_PLUS_1_5}})
+      .to("#scene-hyperframes .tool-visual", { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.2)" }, {{SCENE3_START_PLUS_0_3}})
+      .to("#scene-hyperframes", { opacity: 0, duration: 0.4 }, {{SCENE3_EXIT}})
+
+    // ── Scene 4: Build (Bob) entrance ──
+      .to("#scene-build",              { opacity: 1, duration: 0.4 }, {{SCENE4_START}})
+      .to("#scene-build .build-tag",   { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, {{SCENE4_START_PLUS_0_2}})
+      .to("#scene-build .build-title", { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, {{SCENE4_START_PLUS_0_5}})
+      .to("#scene-build .build-desc",  { opacity: 1, duration: 0.5 }, {{SCENE4_START_PLUS_0_8}})
+      .to("#scene-build .stat-pill",   { opacity: 1, stagger: 0.2, duration: 0.4 }, {{SCENE4_START_PLUS_1_2}})
+      .to("#scene-build .bob-visual",  { opacity: 1, scale: 1, duration: 0.7, ease: "back.out(1.1)" }, {{SCENE4_START_PLUS_0_3}})
+      .to("#scene-build",              { opacity: 0, duration: 0.4 }, {{SCENE4_EXIT}})
+
+    // ── Scene 5: CTA entrance ──
+      .to("#scene-cta",      { opacity: 1, duration: 0.4 }, {{SCENE5_START}})
+      .to(".cta-label",      { opacity: 1, duration: 0.5 }, {{SCENE5_START_PLUS_0_2}})
+      .to(".cta-line1",      { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, {{SCENE5_START_PLUS_0_5}})
+      .to(".cta-line2",      { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, {{SCENE5_START_PLUS_1_0}})
+      .to(".cta-sub",        { opacity: 1, duration: 0.5 }, {{SCENE5_START_PLUS_1_6}});
+
+    // ── Initial hidden states (GSAP-set before timeline plays) ──
+    gsap.set(".eyebrow, .main-title, .main-subtitle", { y: 24 });
+    gsap.set(".tool-tag, .tool-name, .build-tag, .build-title", { y: 20 });
+    gsap.set(".tool-visual, .bob-visual", { scale: 0.96 });
+    gsap.set(".cta-line1, .cta-line2", { y: 24 });
+
+    // ── Register with HyperFrames ──
+    window.__timelines = window.__timelines || {};
+    window.__timelines["wxo-video-studio"] = tl;
+  </script>
+</body>
+</html>

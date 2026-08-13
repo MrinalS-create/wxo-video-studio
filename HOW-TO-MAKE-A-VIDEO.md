@@ -66,6 +66,7 @@ Open this folder in IBM Bob, then copy-paste the right prompt:
 - **Starting a new video** → `prompts/start-a-video.md`
 - **Editing an existing video** → `prompts/edit-a-video.md`
 - **Using a Figma design** → `prompts/figma-video.md`
+- **Animating a video you already recorded** → `prompts/overlay-a-video.md`
 
 ---
 
@@ -96,6 +97,27 @@ Bob uses a warm American female voice by default. You can request:
 | "use a male voice" | American male (Adam) |
 | "use a British female voice" | British female (Emma) |
 | "use a British male voice" | British male (George) |
+
+---
+
+## Animating a video you already recorded
+
+If you have a screen recording or any MP4, Bob can add a full animation layer
+on top of it — narration, captions, callouts, spotlight effects, lower-third bar,
+and intro/outro cards — without re-recording anything.
+
+1. Drop your recording into `assets/` (e.g. `assets/my-demo.mp4`)
+2. Fill in `SCRIPT-TEMPLATE.md` with the narration you want spoken over it
+3. Open Bob and use the prompt in `prompts/overlay-a-video.md`
+
+Bob will:
+- Generate the narration voice with Kokoro TTS
+- Read the word timestamps and sync captions automatically
+- Apply a subtle Ken Burns zoom to the recording
+- Wrap everything in a HyperFrames composition and render to MP4
+
+You can then tune any overlay (position a callout, lengthen a spotlight,
+adjust caption timing) by describing the change to Bob.
 
 ---
 

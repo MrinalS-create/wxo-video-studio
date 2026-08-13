@@ -213,6 +213,81 @@ Ignore `⚠` warnings (they don't block rendering).
 
 ---
 
+## Overlaying animations on a user-supplied video
+
+When the user has an existing MP4/MOV recording and wants to animate it
+(captions, callouts, Ken Burns zoom, spotlight, lower-third, intro/outro),
+use this workflow instead of the standard scene-build workflow.
+
+### Trigger phrases
+"I have a recording", "animate my video", "add captions to my video",
+"overlay my screen capture", "add overlays", "make my video more animated",
+"add text to my recording", "I recorded a demo — add narration",
+or anything where the user provides their own source video.
+
+### Step 1 — Confirm assets and script
+Ask if not provided:
+1. Path to the recording (`assets/<filename>`)
+2. Narration text (or use the script file)
+3. Which overlays they want (caption / callout / spotlight / lower-third / intro / outro)
+
+Default set if not specified: intro card + captions + lower-third + outro card + Ken Burns.
+
+### Step 2 — Run the overlay generator
+```bash
+export NVM_DIR="$HOME/.nvm" && source "$NVM_DIR/nvm.sh" && nvm use 22 --silent
+python3 _engine/overlay/generate.py \
+  --video   assets/<filename.mp4>  \
+  --script  scripts/<slug>.md      \
+  --out     compositions/<slug>/   \
+  [--tts]                          \
+  [--voice  af_heart]              \
+  [--video-start  <N>]             \
+  [--video-volume 0.0]
+```
+
+This produces `compositions/<slug>/index.html` pre-filled with all timestamps.
+
+### Step 3 — Review and tune
+Read the generated `index.html`. Key values to check after first render:
+
+| Element | What to tune |
+|---|---|
+| `CALLOUT_1_TOP` / `CALLOUT_1_LEFT` | Pixel position of the callout chip on screen |
+| `SPOTLIGHT_1_*` | `top`, `left`, `width`, `height` of the spotlight box |
+| `CAPTION_*_START` / `CAPTION_*_END` | Align caption timing to sentence boundaries |
+| `VIDEO_VOLUME` | Raise to 0.15-0.20 if user wants ambient UI sound |
+| Ken Burns `scale` / `x` / `y` end values | Adjust for tighter or looser zoom |
+
+### Step 4 — Render
+```bash
+export NVM_DIR="$HOME/.nvm" && source "$NVM_DIR/nvm.sh" && nvm use 22 --silent
+npx hyperframes render compositions/<slug>/ --output output/<slug>.mp4
+```
+
+### Editing overlay timing after first render
+
+| User request | What to change in index.html |
+|---|---|
+| "Caption appears too early" | Increase `CAPTION_N_START` |
+| "Callout is in the wrong spot" | Update `top`/`left` on `#callout-1` style |
+| "Spotlight box is too small" | Update `width`/`height` on `#spotlight-1` style |
+| "Lower third covers the UI" | Change `bottom` on `.lower-third` |
+| "Make Ken Burns more subtle" | Reduce scale end value (e.g. 1.03 instead of 1.06) |
+| "Add a 4th caption" | Duplicate a `.caption-bar` block + add GSAP tweens |
+| "Remove the spotlight" | Delete `#spotlight-1` div + its GSAP tweens |
+
+### Critical: video element in HyperFrames
+- The `<video>` element must have `muted` attribute — HyperFrames uses
+  its own audio mixing via `data-volume`; the `muted` attr just suppresses
+  the inline browser audio to avoid double-playback.
+- `data-volume` on the `<video>` element controls the original video audio
+  in the final MP4 mix (0 = silent, 1 = full, 0.15 = subtle ambient).
+- The `<video>` src must be a **relative path** from `compositions/<slug>/`
+  to `assets/<file>` — typically `../../assets/<file>`.
+
+---
+
 ## Editing an existing video
 
 When the user asks to change something:

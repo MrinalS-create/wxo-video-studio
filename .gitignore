@@ -12,6 +12,10 @@ output/snapshots*/
 # ── Generated compositions (built by Bob, not committed) ──
 compositions/
 
+# ── Editor ──
+.vscode/
+.idea/
+
 # ── macOS ──
 .DS_Store
 **/.DS_Store
